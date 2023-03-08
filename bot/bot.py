@@ -27,11 +27,11 @@ db = database.Database()
 logger = logging.getLogger(__name__)
 
 HELP_MESSAGE = """Commands:
-⚪ /retry – Regenerate last bot answer
-⚪ /new – Start new dialog
-⚪ /mode – Select chat mode
-⚪ /balance – Show balance
-⚪ /help – Show help
+⚪ /retry – 重新生成最后一个机器人的答案
+⚪ /new – 开始新的对话
+⚪ /mode – 选择聊天模式
+⚪ /balance – 显示余额
+⚪ /help – 显示帮助
 """
 
 async def register_user_if_not_exists(update: Update, context: CallbackContext, user: User):
@@ -56,10 +56,10 @@ async def start_handle(update: Update, context: CallbackContext):
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
     db.start_new_dialog(user_id)
     
-    reply_text = "Hi! I'm <b>ChatGPT</b> bot implemented with GPT-3.5 OpenAI API 🤖\n\n"
+    reply_text = "你好！我是用GPT-3.5 OpenAI API实现的<b>ChatGPT</b>机器人🤖\n\n"
     reply_text += HELP_MESSAGE
 
-    reply_text += "\nAnd now... ask me anything!"
+    reply_text += "\n而现在......问我任何问题吧!"
     
     await update.message.reply_text(reply_text, parse_mode=ParseMode.HTML)
 
@@ -78,7 +78,7 @@ async def retry_handle(update: Update, context: CallbackContext):
 
     dialog_messages = db.get_dialog_messages(user_id, dialog_id=None)
     if len(dialog_messages) == 0:
-        await update.message.reply_text("No message to retry 🤷‍♂️")
+        await update.message.reply_text("没有重试的信息! 🤷‍♂️")
         return
 
     last_dialog_message = dialog_messages.pop()
@@ -100,7 +100,7 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
     if use_new_dialog_timeout:
         if (datetime.now() - db.get_user_attribute(user_id, "last_interaction")).seconds > config.new_dialog_timeout and len(db.get_dialog_messages(user_id)) > 0:
             db.start_new_dialog(user_id)
-            await update.message.reply_text("Starting new dialog due to timeout ✅")
+            await update.message.reply_text("由于超时而开始新的对话 ✅")
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
 
     # send typing action
@@ -135,9 +135,9 @@ async def message_handle(update: Update, context: CallbackContext, message=None,
     # send message if some messages were removed from the context
     if n_first_dialog_messages_removed > 0:
         if n_first_dialog_messages_removed == 1:
-            text = "✍️ <i>Note:</i> Your current dialog is too long, so your <b>first message</b> was removed from the context.\n Send /new command to start new dialog"
+            text = "✍️ <i>Note:</i> 您当前的对话框太长了，所以您的<b>第一条信息</b>被从上下文中删除了。发送/new命令开始新的对话框"
         else:
-            text = f"✍️ <i>Note:</i> Your current dialog is too long, so <b>{n_first_dialog_messages_removed} first messages</b> were removed from the context.\n Send /new command to start new dialog"
+            text = f"✍️ <i>Note:</i> 您当前的对话框太长了，所以<b>{n_first_dialog_messages_removed}第一条信息</b>被从上下文中删除。/n 发送/new命令以开始新的对话框"
         await update.message.reply_text(text, parse_mode=ParseMode.HTML)
 
     try:
@@ -153,7 +153,7 @@ async def new_dialog_handle(update: Update, context: CallbackContext):
     db.set_user_attribute(user_id, "last_interaction", datetime.now())
 
     db.start_new_dialog(user_id)
-    await update.message.reply_text("Starting new dialog ✅")
+    await update.message.reply_text("开始新的对话 ✅")
 
     chat_mode = db.get_user_attribute(user_id, "current_chat_mode")
     await update.message.reply_text(f"{chatgpt.CHAT_MODES[chat_mode]['welcome_message']}", parse_mode=ParseMode.HTML)
@@ -169,7 +169,7 @@ async def show_chat_modes_handle(update: Update, context: CallbackContext):
         keyboard.append([InlineKeyboardButton(chat_mode_dict["name"], callback_data=f"set_chat_mode|{chat_mode}")])
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    await update.message.reply_text("Select chat mode:", reply_markup=reply_markup)
+    await update.message.reply_text("选择聊天模式:", reply_markup=reply_markup)
 
 
 async def set_chat_mode_handle(update: Update, context: CallbackContext):
@@ -185,7 +185,7 @@ async def set_chat_mode_handle(update: Update, context: CallbackContext):
     db.start_new_dialog(user_id)
 
     await query.edit_message_text(
-        f"<b>{chatgpt.CHAT_MODES[chat_mode]['name']}</b> chat mode is set",
+        f"<b>{chatgpt.CHAT_MODES[chat_mode]['name']}</b> 聊天模式已设定",
         parse_mode=ParseMode.HTML
     )
 
@@ -203,14 +203,14 @@ async def show_balance_handle(update: Update, context: CallbackContext):
     price = 0.002 if config.use_chatgpt_api else 0.02
     n_spent_dollars = n_used_tokens * (price / 1000)
 
-    text = f"You spent <b>{n_spent_dollars:.03f}$</b>\n"
-    text += f"You used <b>{n_used_tokens}</b> tokens <i>(price: {price}$ per 1000 tokens)</i>\n"
+    text = f"你花了 <b>{n_spent_dollars:.03f}$</b>\n"
+    text += f"你用了 <b>{n_used_tokens}</b> tokens <i>(价格: {price}$ per 1000 tokens)</i>\n"
 
     await update.message.reply_text(text, parse_mode=ParseMode.HTML)
 
 
 async def edited_message_handle(update: Update, context: CallbackContext):
-    text = "🥲 Unfortunately, message <b>editing</b> is not supported"
+    text = "🥲 不幸的是，不支持信息<b>编辑</b>。"
     await update.edited_message.reply_text(text, parse_mode=ParseMode.HTML)
 
 
